@@ -13,7 +13,7 @@ class Timer {
     this._next = this
     this._refed = true
 
-    this.stack = module.exports.trace ? new Error().stack : null
+    this.stack = tracing ? new Error().stack : null
 
     incRef()
   }
@@ -127,6 +127,20 @@ binding.tiny_timer_init(handle, ontimer)
 let refs = 0
 let garbage = 0
 let nextExpiry = 0
+let paused = false
+let tracing = false
+
+function pause () {
+  if (paused) return
+  binding.tiny_timer_pause(handle)
+  paused = true
+}
+
+function resume () {
+  if (!paused) return
+  binding.tiny_timer_resume(handle, Math.max(nextExpiry - Date.now(), 0), ontimer)
+  paused = false
+}
 
 function incRef () {
   if (refs++ === 0) binding.tiny_timer_ref(handle)
@@ -136,12 +150,18 @@ function decRef () {
   if (--refs === 0) binding.tiny_timer_unref(handle)
 }
 
+function trace (val) {
+  tracing = !!val
+}
+
 function updateTimer (ms) {
+  if (paused) return
   binding.tiny_timer_start(handle, ms)
 }
 
 function ontimer () {
   const now = Date.now()
+
   let list
 
   while ((list = queue.peek()) !== undefined && list.expiry <= now) {
@@ -161,6 +181,12 @@ function ontimer () {
       list.updateExpiry()
       queue.update()
     }
+  }
+
+  if (garbage >= 8 && 2 * garbage >= queue.length) {
+    // reset the heap if too much garbage exists...
+    queue.filter(alive)
+    garbage = 0
   }
 
   if (list !== undefined) {
@@ -199,11 +225,6 @@ function clearTimer (timer) {
   timer._clear()
   if (list.tail !== null) return
   garbage++
-  if (garbage >= 8 && 2 * garbage < queue.length) return
-
-  // reset the heap if too much garbage exists...
-  queue.filter(alive)
-  garbage = 0
 }
 
 function setTimeout (fn, ms, ...args) {
@@ -236,13 +257,19 @@ function cmp (a, b) {
 }
 
 function alive (list) {
-  return list.tail !== null
+  if (list.tail === null) {
+    timers.delete(list.ms)
+    return false
+  }
+  return true
 }
 
 module.exports = {
-  trace: false,
+  trace,
   handle,
   ontimer,
+  pause,
+  resume,
   setTimeout,
   clearTimeout,
   setInterval,

@@ -1,17 +1,46 @@
 const timers = require('./')
 
-timers.trace = true
 timers.setImmediate(function () {
   console.log('hoto')
 })
 
-for (const t of timers) {
-  console.log(t.stack)
-}
-// timers.setTimeout(function () {
-//   console.log('hello world')
-// }, 100)
+timers.setTimeout(function () {
+  console.log('hello world')
+}, 100)
 
+timers.setTimeout(function () {
+  console.log('hello world')
+}, 100)
+
+timers.setTimeout(function () {
+  console.log('hello world')
+}, 100)
+
+timers.setTimeout(function () {
+  console.log('hello world')
+}, 120)
+
+timers.setTimeout(function () {
+  console.log('hello world')
+}, 110)
+
+timers.setTimeout(function () {
+  console.log('hello world')
+}, 120)
+
+timers.setTimeout(function () {
+  console.log('hello world')
+}, 120)
+
+timers.setTimeout(function () {
+  console.log('hello world 1')
+}, 120)
+
+timers.pause()
+
+setTimeout(function () {
+  timers.resume()
+}, 1000)
 // timers.setTimeout(function () {
 //   console.log('hello world')
 // }, 150)

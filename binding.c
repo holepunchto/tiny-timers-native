@@ -42,6 +42,28 @@ NAPI_METHOD(tiny_timer_init) {
   return NULL;
 }
 
+NAPI_METHOD(tiny_timer_pause) {
+  NAPI_ARGV(1)
+  NAPI_ARGV_BUFFER_CAST(uv_timer_t *, handle, 0)
+
+  uv_timer_stop(handle);
+  napi_delete_reference(env, on_timeout);
+
+  return NULL;
+}
+
+NAPI_METHOD(tiny_timer_resume) {
+  NAPI_ARGV(3)
+  NAPI_ARGV_BUFFER_CAST(uv_timer_t *, handle, 0)
+  NAPI_ARGV_UINT32(ms, 1)
+
+  uv_ref((uv_handle_t *) handle);
+  napi_create_reference(env, argv[2], 1, &on_timeout);
+  uv_timer_start(handle, on_timer, ms, 0);
+
+  return NULL;
+}
+
 NAPI_METHOD(tiny_timer_ref) {
   NAPI_ARGV(1)
   NAPI_ARGV_BUFFER_CAST(uv_timer_t *, handle, 0)
@@ -76,4 +98,6 @@ NAPI_INIT() {
   NAPI_EXPORT_FUNCTION(tiny_timer_ref)
   NAPI_EXPORT_FUNCTION(tiny_timer_unref)
   NAPI_EXPORT_FUNCTION(tiny_timer_start)
+  NAPI_EXPORT_FUNCTION(tiny_timer_pause)
+  NAPI_EXPORT_FUNCTION(tiny_timer_resume)
 }
