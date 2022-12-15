@@ -205,7 +205,7 @@ function clearTimer (timer) {
 }
 
 function setTimeout (fn, ms, ...args) {
-  return queueTimer(ms, false, fn, [...args])
+  return queueTimer(ms | 0, false, fn, [...args])
 }
 
 function clearTimeout (timer) {
@@ -213,15 +213,15 @@ function clearTimeout (timer) {
 }
 
 function setInterval (fn, ms, ...args) {
-  return queueTimer(ms, true, fn, [...args])
+  return queueTimer(ms | 0, true, fn, [...args])
 }
 
 function clearInterval (timer) {
   if (timer && timer._list !== null) clearTimer(timer)
 }
 
-function setImmediate (...args) {
-  return setTimeout(0, ...args)
+function setImmediate (fn, ...args) {
+  return setTimeout(fn, 0, ...args)
 }
 
 function clearImmedate (timer) {
