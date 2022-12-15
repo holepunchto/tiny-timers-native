@@ -34,13 +34,17 @@ timers.setTimeout(function () {
 
 timers.setTimeout(function () {
   console.log('hello world 1')
+  throw new Error('un')
 }, 120)
 
-timers.pause()
+timers.setTimeout(function () {
+  console.log('later')
+}, 300)
 
-setTimeout(function () {
-  timers.resume()
-}, 1000)
+process.on('uncaughtException', function () {
+  console.log('sup')
+})
+
 // timers.setTimeout(function () {
 //   console.log('hello world')
 // }, 150)

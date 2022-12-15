@@ -120,7 +120,8 @@ class TimerList {
 
 const timers = new Map()
 const queue = new Heap(cmp)
-const handle = b4a.alloc(binding.sizeof_uv_timer_t)
+const handle = b4a.alloc(binding.sizeof_tiny_timers_t)
+const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetof_tiny_timers_t_next_delay, 1)
 
 binding.tiny_timer_init(handle, ontimer)
 
@@ -163,13 +164,20 @@ function ontimer () {
   const now = Date.now()
 
   let list
+  let uncaughtError = null
 
-  while ((list = queue.peek()) !== undefined && list.expiry <= now) {
+  while ((list = queue.peek()) !== undefined && list.expiry <= now && uncaughtError === null) {
     let ran = false
 
     while (list.tail !== null && list.tail._expiry <= now) {
-      list.shift()._run(now)
       ran = true
+
+      try {
+        list.shift()._run(now)
+      } catch (err) {
+        uncaughtError = err
+        break
+      }
     }
 
     if (list.tail === null) {
@@ -190,8 +198,10 @@ function ontimer () {
   }
 
   if (list !== undefined) {
-    updateTimer(Math.max(list.expiry - now, 0))
+    view[0] = Math.max(list.expiry - now, 0)
   }
+
+  if (uncaughtError !== null) throw uncaughtError
 }
 
 function queueTimer (ms, repeat, fn, args) {
