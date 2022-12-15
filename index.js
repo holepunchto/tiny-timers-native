@@ -13,6 +13,8 @@ class Timer {
     this._next = this
     this._refed = true
 
+    this.stack = module.exports.trace ? new Error().stack : null
+
     incRef()
   }
 
@@ -238,6 +240,7 @@ function alive (list) {
 }
 
 module.exports = {
+  trace: false,
   handle,
   ontimer,
   setTimeout,
@@ -245,5 +248,12 @@ module.exports = {
   setInterval,
   clearInterval,
   setImmediate,
-  clearImmedate
+  clearImmedate,
+  * [Symbol.iterator] () {
+    for (const list of timers.values()) {
+      if (list.tail === null) continue
+      yield list.tail
+      for (let t = list.tail._next; t !== list.tail; t = t._next) yield t
+    }
+  }
 }

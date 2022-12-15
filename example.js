@@ -1,8 +1,13 @@
 const timers = require('./')
 
+timers.trace = true
 timers.setImmediate(function () {
   console.log('hoto')
 })
+
+for (const t of timers) {
+  console.log(t.stack)
+}
 // timers.setTimeout(function () {
 //   console.log('hello world')
 // }, 100)
