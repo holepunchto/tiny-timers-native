@@ -12,6 +12,8 @@ class Timer {
     this._prev = this
     this._next = this
     this._refed = true
+
+    incRef()
   }
 
   get active () {
@@ -24,6 +26,7 @@ class Timer {
       this._expiry = now + this._list.ms
       this._list.push(this)
     } else {
+      if (this._refed === true) decRef()
       this._list = null
     }
   }
@@ -31,6 +34,7 @@ class Timer {
   _clear () {
     if (this._list === null) return
     this._list.clear(this)
+    if (this._refed === true) decRef()
     this._list = null
   }
 
@@ -47,11 +51,13 @@ class Timer {
   unref () {
     if (this._refed === false) return
     this._refed = false
+    decRef()
   }
 
   ref () {
     if (this._refed === true) return
     this._refed = true
+    incRef()
   }
 }
 
@@ -116,8 +122,17 @@ const handle = b4a.alloc(binding.sizeof_uv_timer_t)
 
 binding.tiny_timer_init(handle, ontimer)
 
+let refs = 0
 let garbage = 0
 let nextExpiry = 0
+
+function incRef () {
+  if (refs++ === 0) binding.tiny_timer_ref(handle)
+}
+
+function decRef () {
+  if (--refs === 0) binding.tiny_timer_unref(handle)
+}
 
 function updateTimer (ms) {
   binding.tiny_timer_start(handle, ms)
