@@ -238,6 +238,8 @@ function alive (list) {
 }
 
 module.exports = {
+  handle,
+  ontimer,
   setTimeout,
   clearTimeout,
   setInterval,
