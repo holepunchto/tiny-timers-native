@@ -199,6 +199,10 @@ function ontimer () {
 
   if (list !== undefined) {
     view[0] = Math.max(list.expiry - now, 0)
+    nextExpiry = list.expiry
+  } else {
+    view[0] = 0
+    nextExpiry = 0
   }
 
   if (uncaughtError !== null) throw uncaughtError
