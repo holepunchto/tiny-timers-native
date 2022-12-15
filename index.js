@@ -1,0 +1,232 @@
+const Heap = require('tiny-binary-heap')
+const b4a = require('b4a')
+const binding = require('./binding')
+
+class Timer {
+  constructor (list, expiry, repeat, fn, args) {
+    this._list = list
+    this._expiry = expiry
+    this._repeat = repeat
+    this._fn = fn
+    this._args = args
+    this._prev = this
+    this._next = this
+    this._refed = true
+  }
+
+  get active () {
+    return this._prev !== this._next || this._list.tail === this
+  }
+
+  _run (now) {
+    this._fn.apply(null, this._args)
+    if (this._repeat === true) {
+      this._expiry = now + this._list.ms
+      this._list.push(this)
+    } else {
+      this._list = null
+    }
+  }
+
+  _clear () {
+    if (this._list === null) return
+    this._list.clear(this)
+    this._list = null
+  }
+
+  refresh () {
+    if (this._list === null) return
+    this._list.clear(this)
+    this._list.push(this)
+  }
+
+  hasRef () {
+    return this._refed
+  }
+
+  unref () {
+    if (this._refed === false) return
+    this._refed = false
+  }
+
+  ref () {
+    if (this._refed === true) return
+    this._refed = true
+  }
+}
+
+class TimerList {
+  constructor (ms) {
+    this.ms = ms
+    this.tail = null
+    this.expiry = 0
+  }
+
+  queue (repeat, now, fn, args) {
+    const expiry = now + this.ms
+    const timer = new Timer(this, expiry, repeat, fn, args)
+    return this.push(timer)
+  }
+
+  updateExpiry () {
+    if (this.tail !== null) this.expiry = this.tail._expiry
+  }
+
+  push (timer) {
+    if (this.tail === null) {
+      this.tail = timer
+      return timer
+    }
+
+    const head = this.tail._prev
+
+    head._next = timer
+    timer._prev = head
+
+    timer._next = this.tail
+    this.tail._prev = timer
+
+    return timer
+  }
+
+  shift () {
+    const tail = this.tail
+    if (tail !== null) this.clear(tail)
+    return tail
+  }
+
+  clear (timer) {
+    const prev = timer._prev
+    const next = timer._next
+
+    timer._prev = timer._next = timer
+
+    prev._next = next
+    next._prev = prev
+
+    if (timer === this.tail) {
+      this.tail = next === timer ? null : next
+    }
+  }
+}
+
+const timers = new Map()
+const queue = new Heap(cmp)
+const handle = b4a.alloc(binding.sizeof_uv_timer_t)
+
+binding.tiny_timer_init(handle, ontimer)
+
+let garbage = 0
+let nextExpiry = 0
+
+function updateTimer (ms) {
+  binding.tiny_timer_start(handle, ms)
+}
+
+function ontimer () {
+  const now = Date.now()
+  let list
+
+  while ((list = queue.peek()) !== undefined && list.expiry <= now) {
+    let ran = false
+
+    while (list.tail !== null && list.tail._expiry <= now) {
+      list.shift()._run(now)
+      ran = true
+    }
+
+    if (list.tail === null) {
+      if (ran === false) garbage--
+      timers.delete(list.ms)
+      queue.shift()
+      list = undefined
+    } else {
+      list.updateExpiry()
+      queue.update()
+    }
+  }
+
+  if (list !== undefined) {
+    updateTimer(Math.max(list.expiry - now, 0))
+  }
+}
+
+function queueTimer (ms, repeat, fn, args) {
+  const now = Date.now()
+
+  let l = timers.get(ms)
+
+  if (l) {
+    if (l.tail === null) garbage--
+    return l.queue(repeat, now, fn, args)
+  }
+
+  l = new TimerList(ms)
+  timers.set(ms, l)
+
+  const timer = l.queue(repeat, now, fn, args)
+
+  l.updateExpiry()
+  queue.push(l)
+
+  if (l.expiry < nextExpiry || nextExpiry === 0) {
+    nextExpiry = l.expiry
+    updateTimer(l.ms)
+  }
+
+  return timer
+}
+
+function clearTimer (timer) {
+  const list = timer._list
+  timer._clear()
+  if (list.tail !== null) return
+  garbage++
+  if (garbage >= 8 && 2 * garbage < queue.length) return
+
+  // reset the heap if too much garbage exists...
+  queue.filter(alive)
+  garbage = 0
+}
+
+function setTimeout (fn, ms, ...args) {
+  return queueTimer(ms, false, fn, [...args])
+}
+
+function clearTimeout (timer) {
+  if (timer && timer._list !== null) clearTimer(timer)
+}
+
+function setInterval (fn, ms, ...args) {
+  return queueTimer(ms, true, fn, [...args])
+}
+
+function clearInterval (timer) {
+  if (timer && timer._list !== null) clearTimer(timer)
+}
+
+function setImmediate (...args) {
+  return setTimeout(0, ...args)
+}
+
+function clearImmedate (timer) {
+  if (timer && timer._list !== null) clearTimer(timer)
+}
+
+function cmp (a, b) {
+  const diff = a.expiry - b.expiry
+  return diff === 0 ? a.ms - b.ms : diff
+}
+
+function alive (list) {
+  return list.tail !== null
+}
+
+module.exports = {
+  setTimeout,
+  clearTimeout,
+  setInterval,
+  clearInterval,
+  setImmediate,
+  clearImmedate
+}

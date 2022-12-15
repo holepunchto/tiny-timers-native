@@ -1,0 +1,27 @@
+{
+  "name": "tiny-timers-native",
+  "version": "0.0.0",
+  "description": "Native timers for Javascript",
+  "main": "index.js",
+  "dependencies": {
+    "napi-macros": "^2.1.1",
+    "node-gyp-build": "^4.5.0",
+    "tiny-binary-heap": "^1.1.0"
+  },
+  "devDependencies": {
+    "standard": "^17.0.0"
+  },
+  "scripts": {
+    "test": "standard"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mafintosh/tiny-timers-native.git"
+  },
+  "author": "Mathias Buus (@mafintosh)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mafintosh/tiny-timers-native/issues"
+  },
+  "homepage": "https://github.com/mafintosh/tiny-timers-native"
+}
