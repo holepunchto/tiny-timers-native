@@ -283,6 +283,8 @@ function clearTimer (timer) {
 }
 
 function setTimeout (fn, ms, ...args) {
+  if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
+  if (isDelayInvalid(ms)) ms = 1
   return queueTimer(ms | 0, false, fn, [...args])
 }
 
@@ -291,6 +293,8 @@ function clearTimeout (timer) {
 }
 
 function setInterval (fn, ms, ...args) {
+  if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
+  if (isDelayInvalid(ms)) ms = 1
   return queueTimer(ms | 0, true, fn, [...args])
 }
 
@@ -299,6 +303,7 @@ function clearInterval (timer) {
 }
 
 function setImmediate (fn, ...args) {
+  if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
   return queueTimer(0, false, fn, [...args])
 }
 
@@ -317,6 +322,18 @@ function alive (list) {
     return false
   }
   return true
+}
+
+function isDelayInvalid (ms) {
+  if (ms < 1 || ms > 2147483647) return true
+  // + check NaN? Infinity? -Infinity?
+  return false
+}
+
+function typeError (message, code) {
+  const error = new TypeError(message)
+  error.code = code
+  return error
 }
 
 module.exports = {
