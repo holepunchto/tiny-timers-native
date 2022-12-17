@@ -122,7 +122,7 @@ test('setTimeout with big delay', async function (t) {
   t.plan(1)
 
   try {
-    timers.setTimeout(function () {}, 0xffffffff + 1)
+    timers.setTimeout(function () {}, 0xffffffff)
     t.fail('should have failed to set a timeout')
   } catch (error) {
     t.is(error.message, 'Invalid interval')
