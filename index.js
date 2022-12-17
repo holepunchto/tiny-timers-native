@@ -243,15 +243,6 @@ function ontimer () {
 function queueTimer (ms, repeat, fn, args) {
   const now = Date.now()
 
-  if (ms === 0) {
-    const timer = immediates.queue(repeat, now, fn, args)
-    if (now < nextExpiry || nextExpiry === 0) {
-      nextExpiry = now
-      updateTimer(0)
-    }
-    return timer
-  }
-
   let l = timers.get(ms)
 
   if (l) {
@@ -304,7 +295,15 @@ function clearInterval (timer) {
 
 function setImmediate (fn, ...args) {
   if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
-  return queueTimer(0, false, fn, [...args])
+
+  const now = Date.now()
+  const timer = immediates.queue(false, now, fn, args)
+  if (now < nextExpiry || nextExpiry === 0) {
+    nextExpiry = now
+    updateTimer(0)
+  }
+
+  return timer
 }
 
 function clearImmediate (timer) {
