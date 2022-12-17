@@ -241,6 +241,9 @@ function ontimer () {
 }
 
 function queueTimer (ms, repeat, fn, args) {
+  if (ms === 0) ms = 1
+  if (!(ms >= 1 && ms <= 0x7fffffff)) throw new Error('Invalid interval')
+
   const now = Date.now()
 
   let l = timers.get(ms)
@@ -275,7 +278,6 @@ function clearTimer (timer) {
 
 function setTimeout (fn, ms, ...args) {
   if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
-  validateDelay(ms)
   return queueTimer(Math.floor(ms), false, fn, [...args])
 }
 
@@ -285,7 +287,6 @@ function clearTimeout (timer) {
 
 function setInterval (fn, ms, ...args) {
   if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
-  validateDelay(ms)
   return queueTimer(Math.floor(ms), true, fn, [...args])
 }
 
@@ -321,11 +322,6 @@ function alive (list) {
     return false
   }
   return true
-}
-
-function validateDelay (ms) {
-  if (!(ms >= 0 && ms <= 0x7fffffff)) throw new Error('Invalid interval')
-  // + check string? NaN? Infinity? -Infinity?
 }
 
 function typeError (message, code) {
