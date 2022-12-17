@@ -166,7 +166,7 @@ test('setTimeout with big delay', async function (t) {
     timers.setTimeout(function () {}, 0x7fffffff + 1)
     t.fail('should have failed to set a timeout')
   } catch (error) {
-    t.is(error.message, 'Invalid interval')
+    t.is(error.code, 'ERR_INVALID_DELAY')
   }
 
   t.is(countTimers(), 0)
@@ -190,7 +190,7 @@ test('setTimeout with negative delay', async function (t) {
     timers.setTimeout(function () {}, -50)
     t.fail('should have failed to set a timeout')
   } catch (error) {
-    t.is(error.message, 'Invalid interval')
+    t.is(error.code, 'ERR_INVALID_DELAY')
   }
 
   t.is(countTimers(), 0)
@@ -234,19 +234,17 @@ test('setTimeout with a string number as delay', async function (t) {
   }, '25')
 })
 
-/* test.solo('setTimeout with a string number plus a character as delay', async function (t) {
+test('setTimeout with a string number plus a character as delay', async function (t) {
   t.plan(2)
 
-  const started = Date.now()
+  try {
+    timers.setTimeout(function () {}, '100a')
+  } catch (error) {
+    t.is(error.code, 'ERR_INVALID_DELAY')
+  }
 
-  timers.setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 50), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
-  }, '100a') // + currently it takes 1ms
-
-  setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 50), 'native took ' + Math.abs(Date.now() - started) + 'ms')
-  }, '100a') // + currently it takes 5ms, why? lol
-}) */
+  t.is(countTimers(), 0)
+})
 
 test('setTimeout with an invalid string as delay', async function (t) {
   t.plan(2)
@@ -254,7 +252,7 @@ test('setTimeout with an invalid string as delay', async function (t) {
   try {
     timers.setTimeout(function () {}, 'abcd')
   } catch (error) {
-    t.is(error.message, 'Invalid interval')
+    t.is(error.code, 'ERR_INVALID_DELAY')
   }
 
   t.is(countTimers(), 0)
