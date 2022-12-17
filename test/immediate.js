@@ -1,24 +1,60 @@
 const test = require('brittle')
 const timers = require('../index.js')
-const { isAround } = require('./helpers/index.js')
+const { isAround, countTimers } = require('./helpers/index.js')
 
 test('setImmediate', async function (t) {
-  t.plan(1)
+  t.plan(4)
 
   const started = Date.now()
-  // Note: this always print timers first, and native second
+
+  t.is(countTimers(), 0)
 
   timers.setImmediate(function () {
     t.ok(isAround(Date.now() - started, 0), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
+    t.is(countTimers(), 0)
   })
 
-  /* setImmediate(function () {
-    t.ok(isAround(Date.now() - started, 0), 'native took ' + Math.abs(Date.now() - started) + 'ms')
-  }) */
+  t.is(countTimers(), 1)
+})
+
+test('clearImmediate', async function (t) {
+  t.plan(2)
+
+  const id = timers.setImmediate(() => t.fail('immediate should not be called'))
+
+  t.is(countTimers(), 1)
+  timers.clearImmediate(id)
+  t.is(countTimers(), 0)
+})
+
+test('clearImmediate afterwards', async function (t) {
+  t.plan(2)
+
+  let id = null
+
+  timers.setImmediate(() => {
+    t.is(countTimers(), 1)
+    timers.clearImmediate(id)
+    t.is(countTimers(), 0)
+  })
+
+  id = timers.setImmediate(() => t.fail('timeout should not be called'))
+})
+
+test('clearImmediate twice', async function (t) {
+  t.plan(3)
+
+  const id = timers.setImmediate(() => t.fail('timeout should not be called'))
+
+  t.is(countTimers(), 1)
+  timers.clearImmediate(id)
+  t.is(countTimers(), 0)
+  timers.clearImmediate(id)
+  t.is(countTimers(), 0)
 })
 
 test('order of setImmediate', async function (t) {
-  t.plan(1)
+  t.plan(2)
 
   let count = 0
 
@@ -30,28 +66,40 @@ test('order of setImmediate', async function (t) {
   }
 
   function done () {
-    if (count === 1000000) t.pass()
+    if (count === 1000000) {
+      t.pass()
+      t.is(countTimers(), 0)
+    }
   }
 })
 
-/* test.skip('setImmediate inside of a setImmediate', async function (t) {
-  t.plan(1)
+test('error inside of setImmediate', async function (t) {
+  t.plan(7)
 
-  let nativeImmediate = false
+  const error = new Error('random')
 
   timers.setImmediate(function () {
-    timers.setImmediate(function () {
-
-    })
+    t.pass()
+    throw error
   })
 
-  setImmediate(function () {
-    nativeImmediate = true
+  timers.setTimeout(() => t.pass(), 10)
+  timers.setImmediate(() => t.pass())
+
+  process.once('uncaughtException', function (err) {
+    t.is(err, error)
+
+    timers.setTimeout(() => {
+      t.pass()
+      t.is(countTimers(), 0)
+    }, 20)
+
+    timers.setImmediate(() => t.pass())
   })
-}) */
+})
 
 test('setImmediate with an invalid callback', async function (t) {
-  t.plan(3)
+  t.plan(4)
 
   try {
     timers.setImmediate()
@@ -73,4 +121,6 @@ test('setImmediate with an invalid callback', async function (t) {
   } catch (error) {
     t.is(error.code, 'ERR_INVALID_CALLBACK')
   }
+
+  t.is(countTimers(), 0)
 })
