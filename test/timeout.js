@@ -98,7 +98,7 @@ test('lots of setTimeout + clearTimeout', async function (t) {
 })
 
 test('error inside of setTimeout', async function (t) {
-  t.plan(2)
+  t.plan(5)
 
   const error = new Error('random')
 
@@ -107,8 +107,13 @@ test('error inside of setTimeout', async function (t) {
     throw error
   }, 10)
 
+  timers.setTimeout(() => t.pass(), 30)
+
   process.once('uncaughtException', function (err) {
     t.is(err, error)
+
+    timers.setTimeout(() => t.pass(), 20)
+    timers.setImmediate(() => t.pass())
   })
 })
 
