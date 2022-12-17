@@ -66,7 +66,7 @@ test('clearTimeout', async function (t) {
   timers.setTimeout(() => t.pass(), 50)
 })
 
-test.solo('clearTimeout twice', async function (t) {
+test('clearTimeout twice', async function (t) {
   t.plan(1)
 
   const id = timers.setTimeout(() => t.fail('timeout should not be called'), 20)
