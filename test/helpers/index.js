@@ -1,11 +1,11 @@
-const isLinux = process.platform === 'linux'
 const nil = new Int32Array(new SharedArrayBuffer(4))
+console.log('process.env.CI:', process.env.CI)
 
 module.exports = { isAround, sleep }
 
 function isAround (actual, expected) {
-  if (isLinux && (actual - expected) > 5) return false
-  return actual >= expected // GitHub CI machines are slow
+  if (process.env.CI) return actual >= expected // GitHub CI machines are slow
+  return (actual - expected) <= 5
 }
 
 function sleep (ms) {
