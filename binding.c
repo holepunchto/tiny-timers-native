@@ -6,7 +6,7 @@ typedef struct {
   uv_timer_t timer;
   napi_ref on_timeout;
   napi_env env;
-  uint32_t next_delay;
+  int32_t next_delay;
 } tiny_timers_t;
 
 static void
@@ -22,7 +22,7 @@ on_timer (uv_timer_t *handle) {
   napi_value callback;
   napi_get_reference_value(self->env, self->on_timeout, &callback);
 
-  self->next_delay = 1; // in case js crashes with an uncaught, we just recall it again later assuming the user doesn't exit
+  self->next_delay = -1; // reset delay
 
   if (napi_make_callback(self->env, NULL, ctx, callback, 0, NULL, NULL) == napi_pending_exception) {
     napi_value fatal_exception;
@@ -30,7 +30,7 @@ on_timer (uv_timer_t *handle) {
     napi_fatal_exception(self->env, fatal_exception);
   }
 
-  if (self->next_delay) {
+  if (self->next_delay > -1) {
     uv_timer_start(handle, on_timer, self->next_delay, 0);
   }
 
@@ -42,7 +42,7 @@ NAPI_METHOD(tiny_timer_init) {
   NAPI_ARGV_BUFFER_CAST(tiny_timers_t *, self, 0)
 
   self->env = env;
-  self->next_delay = 0;
+  self->next_delay = -1;
 
   uv_loop_t *loop;
   napi_get_uv_event_loop(env, &loop);
@@ -69,7 +69,7 @@ NAPI_METHOD(tiny_timer_pause) {
 NAPI_METHOD(tiny_timer_resume) {
   NAPI_ARGV(3)
   NAPI_ARGV_BUFFER_CAST(tiny_timers_t *, self, 0)
-  NAPI_ARGV_UINT32(ms, 1)
+  NAPI_ARGV_INT32(ms, 1)
 
   uv_ref((uv_handle_t *) self);
   napi_create_reference(env, argv[2], 1, &(self->on_timeout));
@@ -100,7 +100,7 @@ NAPI_METHOD(tiny_timer_unref) {
 NAPI_METHOD(tiny_timer_start) {
   NAPI_ARGV(2)
   NAPI_ARGV_BUFFER_CAST(tiny_timers_t *, self, 0)
-  NAPI_ARGV_UINT32(ms, 1)
+  NAPI_ARGV_INT32(ms, 1)
 
   uv_timer_start((uv_timer_t *) self, on_timer, ms, 0);
 

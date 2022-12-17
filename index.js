@@ -5,6 +5,7 @@ const binding = require('./binding')
 class Timer {
   constructor (list, expiry, repeat, fn, args) {
     this._list = list
+    this._sync = ticks
     this._expiry = expiry
     this._repeat = repeat
     this._fn = fn
@@ -120,14 +121,17 @@ class TimerList {
 
 const timers = new Map()
 const queue = new Heap(cmp)
+const immediates = new TimerList(0)
 const handle = b4a.alloc(binding.sizeof_tiny_timers_t)
-const view = new Uint32Array(handle.buffer, handle.byteOffset + binding.offsetof_tiny_timers_t_next_delay, 1)
+const view = new Int32Array(handle.buffer, handle.byteOffset + binding.offsetof_tiny_timers_t_next_delay, 1)
 
 binding.tiny_timer_init(handle, ontimer)
 
 let refs = 0
 let garbage = 0
 let nextExpiry = 0
+let ticks = 1
+let triggered = 0
 let paused = false
 let tracing = false
 
@@ -155,41 +159,61 @@ function trace (val) {
   tracing = !!val
 }
 
+function tick () {
+  // just a wrapping number between 0-255 for checking re-entry and if we need
+  // to wakeup the timer in c
+  return (ticks = (ticks + 1) & 0xff)
+}
+
 function updateTimer (ms) {
-  if (paused) return
+  if (paused || tick === triggered) return
   binding.tiny_timer_start(handle, ms)
 }
 
 function ontimer () {
   const now = Date.now()
 
-  let list
+  let next
   let uncaughtError = null
 
-  while ((list = queue.peek()) !== undefined && list.expiry <= now && uncaughtError === null) {
+  triggered = tick()
+
+  while (immediates.tail !== null && immediates.tail._sync !== ticks) {
+    try {
+      immediates.shift()._run(now)
+    } catch (err) {
+      uncaughtError = err
+      break
+    }
+  }
+
+  while ((next = queue.peek()) !== undefined && next.expiry <= now && uncaughtError === null) {
     let ran = false
 
-    while (list.tail !== null && list.tail._expiry <= now) {
+    // check if the next is expiring AND that it was not added immediately (ie setImmediate loop)
+    while (next.tail !== null && next.tail._expiry <= now) {
       ran = true
 
       try {
-        list.shift()._run(now)
+        next.shift()._run(now)
       } catch (err) {
         uncaughtError = err
         break
       }
     }
 
-    if (list.tail === null) {
+    if (next.tail === null) {
       if (ran === false) garbage--
-      timers.delete(list.ms)
+      timers.delete(next.ms)
       queue.shift()
-      list = undefined
+      next = undefined
     } else {
-      list.updateExpiry()
+      next.updateExpiry()
       queue.update()
     }
   }
+
+  tick()
 
   if (garbage >= 8 && 2 * garbage >= queue.length) {
     // reset the heap if too much garbage exists...
@@ -197,19 +221,36 @@ function ontimer () {
     garbage = 0
   }
 
-  if (list !== undefined) {
-    view[0] = Math.max(list.expiry - now, 0)
-    nextExpiry = list.expiry
-  } else {
+  if (immediates.tail !== null) {
     view[0] = 0
+    nextExpiry = now
+  } else if (next !== undefined) {
+    view[0] = Math.max(next.expiry - now, 0)
+    nextExpiry = next.expiry
+  } else {
+    view[0] = -1
     nextExpiry = 0
   }
 
-  if (uncaughtError !== null) throw uncaughtError
+  if (uncaughtError !== null) {
+    // retrigger asap, safest choice (and the user should have crashed anyway)
+    view[0] = 0
+    nextExpiry = now
+    throw uncaughtError
+  }
 }
 
 function queueTimer (ms, repeat, fn, args) {
   const now = Date.now()
+
+  if (ms === 0) {
+    const timer = immediates.queue(repeat, now, fn, args)
+    if (now < nextExpiry || nextExpiry === 0) {
+      nextExpiry = now
+      updateTimer(0)
+    }
+    return timer
+  }
 
   let l = timers.get(ms)
 
@@ -237,7 +278,7 @@ function queueTimer (ms, repeat, fn, args) {
 function clearTimer (timer) {
   const list = timer._list
   timer._clear()
-  if (list.tail !== null) return
+  if (list.tail !== null || list === immediates) return
   garbage++
 }
 
@@ -258,10 +299,10 @@ function clearInterval (timer) {
 }
 
 function setImmediate (fn, ...args) {
-  return setTimeout(fn, 0, ...args)
+  return queueTimer(0, false, fn, [...args])
 }
 
-function clearImmedate (timer) {
+function clearImmediate (timer) {
   if (timer && timer._list !== null) clearTimer(timer)
 }
 
@@ -289,8 +330,12 @@ module.exports = {
   setInterval,
   clearInterval,
   setImmediate,
-  clearImmedate,
+  clearImmediate,
   * [Symbol.iterator] () {
+    if (immediates.tail !== null) {
+      yield immediates.tail
+      for (let t = immediates.tail._next; t !== immediates.tail; t = t._next) yield t
+    }
     for (const list of timers.values()) {
       if (list.tail === null) continue
       yield list.tail
