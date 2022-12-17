@@ -178,15 +178,6 @@ function ontimer () {
 
   triggered = tick()
 
-  while (immediates.tail !== null && immediates.tail._sync !== ticks) {
-    try {
-      immediates.shift()._run(now)
-    } catch (err) {
-      uncaughtError = err
-      break
-    }
-  }
-
   while ((next = queue.peek()) !== undefined && next.expiry <= now && uncaughtError === null) {
     let ran = false
 
@@ -210,6 +201,15 @@ function ontimer () {
     } else {
       next.updateExpiry()
       queue.update()
+    }
+  }
+
+  while (immediates.tail !== null && immediates.tail._sync !== ticks && uncaughtError === null) {
+    try {
+      immediates.shift()._run(now)
+    } catch (err) {
+      uncaughtError = err
+      break
     }
   }
 
