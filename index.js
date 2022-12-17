@@ -242,7 +242,7 @@ function ontimer () {
 
 function queueTimer (ms, repeat, fn, args) {
   if (ms === 0) ms = 1
-  if (!(ms >= 1 && ms <= 0x7fffffff)) throw new Error('Invalid interval')
+  if (!(ms >= 1 && ms <= 0x7fffffff)) throw typeError('Invalid interval', 'ERR_INVALID_DELAY')
 
   const now = Date.now()
 

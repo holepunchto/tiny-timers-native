@@ -22,10 +22,6 @@ test('interrupt setTimeout with CPU overhead', async function (t) {
   }, 50)
 
   while (Date.now() - started < 75) {} // eslint-disable-line no-empty
-
-  /* setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 125), 'native took ' + Math.abs(Date.now() - started) + 'ms')
-  }, 50) */
 })
 
 test('interrupt setTimeout with Atomics.wait', async function (t) {
@@ -38,10 +34,6 @@ test('interrupt setTimeout with Atomics.wait', async function (t) {
   }, 50)
 
   sleep(75)
-
-  /* setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 125), 'native took ' + Math.abs(Date.now() - started) + 'ms')
-  }, 50) */
 })
 
 test('multiple setTimeout', async function (t) {
@@ -70,19 +62,21 @@ test('clearTimeout', async function (t) {
   t.plan(1)
 
   const id = timers.setTimeout(() => t.fail('timeout should not be called'), 20)
-  setTimeout(() => timers.clearTimeout(id), 15)
-  setTimeout(() => t.pass(), 50)
+  timers.setTimeout(() => timers.clearTimeout(id), 15)
+  timers.setTimeout(() => t.pass(), 50)
 })
 
-test('clearTimeout twice', async function (t) {
+test.solo('clearTimeout twice', async function (t) {
   t.plan(1)
 
   const id = timers.setTimeout(() => t.fail('timeout should not be called'), 20)
-  setTimeout(() => {
+
+  timers.setTimeout(() => {
     timers.clearTimeout(id)
     timers.clearTimeout(id)
   }, 15)
-  setTimeout(() => t.pass(), 50)
+
+  timers.setTimeout(() => t.pass(), 50)
 })
 
 test('lots of setTimeout + clearTimeout', async function (t) {
