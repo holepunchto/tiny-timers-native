@@ -325,7 +325,7 @@ function alive (list) {
 }
 
 function validateDelay (ms) {
-  if (!(ms >= 0 && ms < 0xffffffff)) throw new Error('Invalid interval')
+  if (!(ms >= 0 && ms <= 0x7fffffff)) throw new Error('Invalid interval')
   // + check string? NaN? Infinity? -Infinity?
 }
 
