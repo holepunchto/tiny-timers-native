@@ -284,8 +284,8 @@ function clearTimer (timer) {
 
 function setTimeout (fn, ms, ...args) {
   if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
-  ms = validateDelay(ms)
-  return queueTimer(ms | 0, false, fn, [...args])
+  validateDelay(ms)
+  return queueTimer(Math.floor(ms), false, fn, [...args])
 }
 
 function clearTimeout (timer) {
@@ -294,8 +294,8 @@ function clearTimeout (timer) {
 
 function setInterval (fn, ms, ...args) {
   if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
-  ms = validateDelay(ms)
-  return queueTimer(ms | 0, true, fn, [...args])
+  validateDelay(ms)
+  return queueTimer(Math.floor(ms), true, fn, [...args])
 }
 
 function clearInterval (timer) {
@@ -325,10 +325,8 @@ function alive (list) {
 }
 
 function validateDelay (ms) {
-  if (ms > 2147483647) throw new Error('Timeout overflow: ' + ms + ' does not fit into a 32-bit signed integer')
-  if (ms < 1) return 1
+  if (!(ms >= 0 && ms <= 0xffffffff)) throw new Error('Invalid interval')
   // + check string? NaN? Infinity? -Infinity?
-  return ms
 }
 
 function typeError (message, code) {

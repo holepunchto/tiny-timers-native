@@ -118,18 +118,14 @@ test('error inside of setTimeout', async function (t) {
   })
 })
 
-test('setTimeout with big delay', async function (t) {
+test.solo('setTimeout with big delay', async function (t) {
   t.plan(1)
 
-  const started = Date.now()
-
   try {
-    timers.setTimeout(function () {
-      t.ok(isAround(Date.now() - started, 0), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
-    }, 2147483648)
+    timers.setTimeout(function () {}, 0xffffffff + 1)
     t.fail('should have failed to set a timeout')
   } catch (error) {
-    t.ok(error.message.indexOf('Timeout overflow') === 0)
+    t.is(error.message, 'Invalid interval')
   }
 })
 
@@ -140,17 +136,18 @@ test('setTimeout with zero delay', async function (t) {
 
   timers.setTimeout(function () {
     t.ok(isAround(Date.now() - started, 0), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
-  }, 0) // Note: this should take 1ms
+  }, 0)
 })
 
 test('setTimeout with negative delay', async function (t) {
   t.plan(1)
 
-  const started = Date.now()
-
-  timers.setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 0), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
-  }, -50) // Note: this should take 1ms
+  try {
+    timers.setTimeout(function () {}, -50)
+    t.fail('should have failed to set a timeout')
+  } catch (error) {
+    t.is(error.message, 'Invalid interval')
+  }
 })
 
 test('setTimeout with an invalid callback', async function (t) {
@@ -205,13 +202,9 @@ test('setTimeout with a string number as delay', async function (t) {
 test('setTimeout with an invalid string as delay', async function (t) {
   t.plan(1)
 
-  const started = Date.now()
-
-  timers.setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 0), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
-  }, 'abcd')
-
-  /* setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 0), 'native took ' + Math.abs(Date.now() - started) + 'ms')
-  }, 'abcd') */
+  try {
+    timers.setTimeout(function () {}, 'abcd')
+  } catch (error) {
+    t.is(error.message, 'Invalid interval')
+  }
 })
