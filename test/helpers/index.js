@@ -1,5 +1,4 @@
 const nil = new Int32Array(new SharedArrayBuffer(4))
-console.log('process.env.CI:', process.env.CI)
 
 module.exports = { isAround, sleep }
 
