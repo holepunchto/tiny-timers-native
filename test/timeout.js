@@ -118,7 +118,7 @@ test('error inside of setTimeout', async function (t) {
   })
 })
 
-test.solo('setTimeout with big delay', async function (t) {
+test('setTimeout with big delay', async function (t) {
   t.plan(1)
 
   try {
