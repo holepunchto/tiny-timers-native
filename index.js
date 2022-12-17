@@ -284,7 +284,7 @@ function clearTimer (timer) {
 
 function setTimeout (fn, ms, ...args) {
   if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
-  if (isDelayInvalid(ms)) ms = 1
+  ms = validateDelay(ms)
   return queueTimer(ms | 0, false, fn, [...args])
 }
 
@@ -294,7 +294,7 @@ function clearTimeout (timer) {
 
 function setInterval (fn, ms, ...args) {
   if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
-  if (isDelayInvalid(ms)) ms = 1
+  ms = validateDelay(ms)
   return queueTimer(ms | 0, true, fn, [...args])
 }
 
@@ -324,10 +324,11 @@ function alive (list) {
   return true
 }
 
-function isDelayInvalid (ms) {
-  if (ms < 1 || ms > 2147483647) return true
-  // + check NaN? Infinity? -Infinity?
-  return false
+function validateDelay (ms) {
+  if (ms > 2147483647) throw new Error('Timeout overflow: ' + ms + ' does not fit into a 32-bit signed integer')
+  if (ms < 1) return 1
+  // + check string? NaN? Infinity? -Infinity?
+  return ms
 }
 
 function typeError (message, code) {

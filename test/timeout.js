@@ -62,7 +62,7 @@ test('multiple setTimeout', async function (t) {
   }, 20)
 
   timers.setTimeout(() => {
-    t.ok(isAround(Date.now() - started, 1), '4th timer took ' + Math.abs(Date.now() - started) + 'ms')
+    t.ok(isAround(Date.now() - started, 0), '4th timer took ' + Math.abs(Date.now() - started) + 'ms')
   }, 1)
 })
 
@@ -123,13 +123,14 @@ test('setTimeout with big delay', async function (t) {
 
   const started = Date.now()
 
-  timers.setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 1), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
-  }, 2147483648) // Note: this should actually take 1ms
-
-  /* setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 1), 'native took ' + Math.abs(Date.now() - started) + 'ms')
-  }, 2147483648) // (node:1176386) TimeoutOverflowWarning: 2147483648 does not fit into a 32-bit signed integer. */
+  try {
+    timers.setTimeout(function () {
+      t.ok(isAround(Date.now() - started, 0), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
+    }, 2147483648)
+    t.fail('should have failed to set a timeout')
+  } catch (error) {
+    t.ok(error.message.indexOf('Timeout overflow') === 0)
+  }
 })
 
 test('setTimeout with zero delay', async function (t) {
@@ -138,7 +139,7 @@ test('setTimeout with zero delay', async function (t) {
   const started = Date.now()
 
   timers.setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 1), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
+    t.ok(isAround(Date.now() - started, 0), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
   }, 0) // Note: this should take 1ms
 })
 
@@ -148,7 +149,7 @@ test('setTimeout with negative delay', async function (t) {
   const started = Date.now()
 
   timers.setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 1), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
+    t.ok(isAround(Date.now() - started, 0), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
   }, -50) // Note: this should take 1ms
 })
 
@@ -207,10 +208,10 @@ test('setTimeout with an invalid string as delay', async function (t) {
   const started = Date.now()
 
   timers.setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 1), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
+    t.ok(isAround(Date.now() - started, 0), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
   }, 'abcd')
 
   /* setTimeout(function () {
-    t.ok(isAround(Date.now() - started, 1), 'native took ' + Math.abs(Date.now() - started) + 'ms')
+    t.ok(isAround(Date.now() - started, 0), 'native took ' + Math.abs(Date.now() - started) + 'ms')
   }, 'abcd') */
 })

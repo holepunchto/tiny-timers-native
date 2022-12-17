@@ -1,11 +1,13 @@
+const isLinux = process.platform === 'linux'
+const nil = new Int32Array(new SharedArrayBuffer(4))
+
 module.exports = { isAround, sleep }
 
-function isAround (actual, expected, precision = 5) {
-  const diff = Math.abs(actual - expected)
-  return diff <= precision
+function isAround (actual, expected) {
+  if (isLinux && (actual - expected) > 5) return false
+  return actual >= expected // GitHub CI machines are slow
 }
 
 function sleep (ms) {
-  if (!this.nil) this.nil = new Int32Array(new SharedArrayBuffer(4))
-  Atomics.wait(this.nil, 0, 0, ms)
+  Atomics.wait(nil, 0, 0, ms)
 }
