@@ -277,7 +277,7 @@ function clearTimer (timer) {
 }
 
 function setTimeout (fn, ms, ...args) {
-  if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
+  if (typeof fn !== 'function') throw typeError('Callback must be a function', 'ERR_INVALID_CALLBACK')
   return queueTimer(Math.floor(ms), false, fn, [...args])
 }
 
@@ -286,7 +286,7 @@ function clearTimeout (timer) {
 }
 
 function setInterval (fn, ms, ...args) {
-  if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
+  if (typeof fn !== 'function') throw typeError('Callback must be a function', 'ERR_INVALID_CALLBACK')
   return queueTimer(Math.floor(ms), true, fn, [...args])
 }
 
@@ -295,7 +295,7 @@ function clearInterval (timer) {
 }
 
 function setImmediate (fn, ...args) {
-  if (typeof fn !== 'function') throw typeError('Callback must be a function.', 'ERR_INVALID_CALLBACK')
+  if (typeof fn !== 'function') throw typeError('Callback must be a function', 'ERR_INVALID_CALLBACK')
 
   const now = Date.now()
   const timer = immediates.queue(false, now, fn, args)
