@@ -17,6 +17,16 @@ test('setTimeout', async function (t) {
   t.is(countTimers(), 1)
 })
 
+test('setTimeout timer active', async function (t) {
+  t.plan(2)
+
+  const timer = timers.setTimeout(function () {
+    t.absent(timer.active)
+  }, 50)
+
+  t.ok(timer.active)
+})
+
 test('interrupt setTimeout with CPU overhead', async function (t) {
   t.plan(2)
 

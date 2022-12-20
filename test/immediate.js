@@ -17,6 +17,16 @@ test('setImmediate', async function (t) {
   t.is(countTimers(), 1)
 })
 
+test('setImmediate timer active', async function (t) {
+  t.plan(2)
+
+  const timer = timers.setImmediate(function () {
+    t.absent(timer.active)
+  }, 50)
+
+  t.ok(timer.active)
+})
+
 test('clearImmediate', async function (t) {
   t.plan(2)
 
