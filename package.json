@@ -14,7 +14,7 @@
     "standard": "^17.0.0"
   },
   "scripts": {
-    "test": "standard && brittle test/*.js"
+    "test": "standard && brittle test/*.js --coverage"
   },
   "repository": {
     "type": "git",
