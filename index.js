@@ -241,16 +241,11 @@ function ontimer () {
 }
 
 function queueTimer (ms, repeat, fn, args) {
-  const now = Date.now()
+  if (typeof fn !== 'function') throw typeError('Callback must be a function', 'ERR_INVALID_CALLBACK')
+  if (ms === 0) ms = 1
+  if (!(ms >= 1 && ms <= 0x7fffffff)) throw typeError('Invalid delay', 'ERR_INVALID_DELAY')
 
-  if (ms === 0) {
-    const timer = immediates.queue(repeat, now, fn, args)
-    if (now < nextExpiry || nextExpiry === 0) {
-      nextExpiry = now
-      updateTimer(0)
-    }
-    return timer
-  }
+  const now = Date.now()
 
   let l = timers.get(ms)
 
@@ -283,7 +278,7 @@ function clearTimer (timer) {
 }
 
 function setTimeout (fn, ms, ...args) {
-  return queueTimer(ms | 0, false, fn, [...args])
+  return queueTimer(Math.floor(ms), false, fn, [...args])
 }
 
 function clearTimeout (timer) {
@@ -291,7 +286,7 @@ function clearTimeout (timer) {
 }
 
 function setInterval (fn, ms, ...args) {
-  return queueTimer(ms | 0, true, fn, [...args])
+  return queueTimer(Math.floor(ms), true, fn, [...args])
 }
 
 function clearInterval (timer) {
@@ -299,7 +294,17 @@ function clearInterval (timer) {
 }
 
 function setImmediate (fn, ...args) {
-  return queueTimer(0, false, fn, [...args])
+  if (typeof fn !== 'function') throw typeError('Callback must be a function', 'ERR_INVALID_CALLBACK')
+
+  const now = Date.now()
+  const timer = immediates.queue(false, now, fn, args)
+
+  if (now < nextExpiry || nextExpiry === 0) {
+    nextExpiry = now
+    updateTimer(0)
+  }
+
+  return timer
 }
 
 function clearImmediate (timer) {
@@ -317,6 +322,12 @@ function alive (list) {
     return false
   }
   return true
+}
+
+function typeError (message, code) {
+  const error = new TypeError(message)
+  error.code = code
+  return error
 }
 
 module.exports = {
