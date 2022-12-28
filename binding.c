@@ -6,7 +6,6 @@ typedef struct {
   uv_timer_t timer;
   napi_ref on_timeout;
   napi_env env;
-  bool paused;
   int32_t next_delay;
 } tiny_timers_t;
 
@@ -38,22 +37,12 @@ on_timer (uv_timer_t *handle) {
   napi_close_handle_scope(self->env, scope);
 }
 
-static void
-cleanup (void *arg) {
-  tiny_timers_t *self = arg;
-  if (self->paused) return;
-
-  napi_delete_reference(self->env, self->on_timeout);
-  uv_timer_stop((uv_timer_t *) self);
-}
-
 NAPI_METHOD(tiny_timer_init) {
   NAPI_ARGV(2)
   NAPI_ARGV_BUFFER_CAST(tiny_timers_t *, self, 0)
 
   self->env = env;
   self->next_delay = -1;
-  self->paused = false;
 
   uv_loop_t *loop;
   napi_get_uv_event_loop(env, &loop);
@@ -62,7 +51,6 @@ NAPI_METHOD(tiny_timer_init) {
   uv_unref((uv_handle_t *) self);
 
   napi_create_reference(env, argv[1], 1, &(self->on_timeout));
-  napi_add_env_cleanup_hook(env, cleanup, self);
 
   return NULL;
 }
@@ -71,7 +59,6 @@ NAPI_METHOD(tiny_timer_pause) {
   NAPI_ARGV(1)
   NAPI_ARGV_BUFFER_CAST(tiny_timers_t *, self, 0)
 
-  self->paused = true;
   uv_unref((uv_handle_t *) self);
   uv_timer_stop((uv_timer_t *) self);
   napi_delete_reference(env, self->on_timeout);
@@ -80,13 +67,13 @@ NAPI_METHOD(tiny_timer_pause) {
 }
 
 NAPI_METHOD(tiny_timer_resume) {
-  NAPI_ARGV(3)
+  NAPI_ARGV(4)
   NAPI_ARGV_BUFFER_CAST(tiny_timers_t *, self, 0)
   NAPI_ARGV_INT32(ms, 1)
+  NAPI_ARGV_UINT32(ref, 2)
 
-  self->paused = false;
-  uv_ref((uv_handle_t *) self);
-  napi_create_reference(env, argv[2], 1, &(self->on_timeout));
+  if (ref > 0) uv_ref((uv_handle_t *) self);
+  napi_create_reference(env, argv[3], 1, &(self->on_timeout));
   self->next_delay = 0;
   uv_timer_start((uv_timer_t *) self, on_timer, ms, 0);
 

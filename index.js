@@ -126,6 +126,7 @@ const handle = b4a.alloc(binding.sizeof_tiny_timers_t)
 const view = new Int32Array(handle.buffer, handle.byteOffset + binding.offsetof_tiny_timers_t_next_delay, 1)
 
 binding.tiny_timer_init(handle, ontimer)
+process.once('exit', pause)
 
 let refs = 0
 let garbage = 0
@@ -143,7 +144,7 @@ function pause () {
 
 function resume () {
   if (!paused) return
-  binding.tiny_timer_resume(handle, Math.max(nextExpiry - Date.now(), 0), ontimer)
+  binding.tiny_timer_resume(handle, Math.max(nextExpiry - Date.now(), 0), refs, ontimer)
   paused = false
 }
 
