@@ -1,6 +1,6 @@
 {
   "name": "tiny-timers-native",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Native timers for Javascript",
   "main": "index.js",
   "dependencies": {
