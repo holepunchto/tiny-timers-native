@@ -12,7 +12,7 @@ test('setInterval', async function (t) {
   const id = timers.setInterval(function () {
     t.ok(isAround(Date.now() - started, 50), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
 
-    t.is(countTimers(), 1, 'count inside of interval') // + this should be 1?
+    t.is(countTimers(), 1, 'count inside of interval')
     timers.clearInterval(id)
     t.is(countTimers(), 0, 'count after clearing interval')
   }, 50)
@@ -47,7 +47,7 @@ test('setInterval timer active', async function (t) {
   t.plan(3)
 
   const timer = timers.setInterval(function () {
-    t.ok(timer.active) // + should be true?
+    t.ok(timer.active)
     timers.clearInterval(timer)
     t.absent(timer.active)
   }, 50)

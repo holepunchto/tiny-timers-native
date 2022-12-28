@@ -20,11 +20,10 @@ class Timer {
   }
 
   get active () {
-    return this._prev !== this._next || this._list.tail === this
+    return this._prev !== this._next || (this._list !== null && this._list.tail === this)
   }
 
   _run (now) {
-    this._fn.apply(null, this._args)
     if (this._repeat === true) {
       this._expiry = now + this._list.ms
       this._list.push(this)
@@ -32,6 +31,8 @@ class Timer {
       if (this._refed === true) decRef()
       this._list = null
     }
+    // apply at the bottom to avoid re-entries...
+    this._fn.apply(null, this._args)
   }
 
   _clear () {
