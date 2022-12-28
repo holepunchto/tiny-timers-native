@@ -45,6 +45,7 @@ class Timer {
   refresh () {
     if (this._list === null) return
     this._list.clear(this)
+    this._expiry = Date.now() + this._list.ms
     this._list.push(this)
   }
 
