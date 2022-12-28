@@ -15,7 +15,7 @@ function countTimers () {
 function isAround (actual, expected) {
   if (!(actual >= expected)) return false
   if (process.env.CI) return true // GitHub CI machines are slow
-  return (actual - expected) <= 5
+  return (actual - expected) <= 10
 }
 
 function sleep (ms) {

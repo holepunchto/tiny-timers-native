@@ -27,6 +27,24 @@ test('setTimeout timer active', async function (t) {
   t.ok(timer.active)
 })
 
+test.solo('setTimeout refresh', async function (t) {
+  t.plan(2)
+
+  const started = Date.now()
+
+  const timer = timers.setTimeout(function () {
+    t.is(ticks, 6, 'was refreshed')
+    t.ok(isAround(Date.now() - started, 200), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
+  }, 50)
+
+  let ticks = 0
+
+  const t2 = timers.setInterval(function () {
+    timer.refresh()
+    if (++ticks === 6) timers.clearInterval(t2)
+  }, 25)
+})
+
 test('interrupt setTimeout with CPU overhead', async function (t) {
   t.plan(2)
 

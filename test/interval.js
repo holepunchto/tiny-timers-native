@@ -1,6 +1,6 @@
 const test = require('brittle')
 const timers = require('../index.js')
-const { isAround, countTimers } = require('./helpers/index.js')
+const { isAround, countTimers, sleep } = require('./helpers/index.js')
 
 test('setInterval', async function (t) {
   t.plan(5)
@@ -20,7 +20,7 @@ test('setInterval', async function (t) {
   t.is(countTimers(), 1, 'count after setting an interval')
 })
 
-/* test.skip('setInterval multiple cycles', async function (t) {
+test('setInterval multiple cycles', async function (t) {
   t.plan(9)
 
   let started = Date.now()
@@ -32,7 +32,7 @@ test('setInterval', async function (t) {
     t.ok(isAround(Date.now() - started, 50), 'timers took ' + Math.abs(Date.now() - started) + 'ms')
     started = Date.now()
 
-    t.is(countTimers(), 1, 'count inside of interval') // + this should be 1?
+    t.is(countTimers(), 1, 'count inside of interval')
 
     if (++intervalCount === 3) {
       timers.clearInterval(id)
@@ -41,7 +41,7 @@ test('setInterval', async function (t) {
   }, 50)
 
   t.is(countTimers(), 1, 'count after setting an interval')
-}) */
+})
 
 test('setInterval timer active', async function (t) {
   t.plan(3)
@@ -55,7 +55,7 @@ test('setInterval timer active', async function (t) {
   t.ok(timer.active)
 })
 
-/* test('interrupt setInterval with CPU overhead', async function (t) {
+test('interrupt setInterval with CPU overhead', async function (t) {
   t.plan(2)
 
   const started = Date.now()
@@ -83,7 +83,7 @@ test('interrupt setInterval with Atomics.wait', async function (t) {
   sleep(75)
 })
 
-test.skip('multiple setInterval', async function (t) {
+test('multiple setInterval', async function (t) {
   t.plan(10)
 
   const started = Date.now()
@@ -118,7 +118,7 @@ test.skip('multiple setInterval', async function (t) {
   }, 1)
 
   t.is(countTimers(), 4)
-}) */
+})
 
 test('clearInterval', async function (t) {
   t.plan(2)
