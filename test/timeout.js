@@ -27,7 +27,7 @@ test('setTimeout timer active', async function (t) {
   t.ok(timer.active)
 })
 
-test.solo('setTimeout refresh', async function (t) {
+test('setTimeout refresh', async function (t) {
   t.plan(2)
 
   const started = Date.now()
