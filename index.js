@@ -40,6 +40,8 @@ class Timer {
     this._list.clear(this)
     if (this._refed === true) decRef()
     this._list = null
+
+    maybeUpdateTimer()
   }
 
   refresh () {
@@ -47,6 +49,8 @@ class Timer {
     this._list.clear(this)
     this._expiry = Date.now() + this._list.ms
     this._list.push(this)
+
+    maybeUpdateTimer()
   }
 
   hasRef () {
@@ -168,13 +172,23 @@ function tick () {
   return (ticks = (ticks + 1) & 0xff)
 }
 
+function cancelTimer () {
+  if (paused || ticks === triggered) return
+  binding.tiny_timer_stop(handle)
+}
+
 function updateTimer (ms) {
-  if (paused || tick === triggered) return
+  if (paused || ticks === triggered) return
   binding.tiny_timer_start(handle, ms)
 }
 
 function ontimer () {
   const now = Date.now()
+
+  if (now < nextExpiry) {
+    view[0] = (nextExpiry - now)
+    return
+  }
 
   let next
   let uncaughtError = null
@@ -198,7 +212,7 @@ function ontimer () {
 
     if (next.tail === null) {
       if (ran === false) garbage--
-      timers.delete(next.ms)
+      deleteTimerList(next)
       queue.shift()
       next = undefined
     } else {
@@ -243,6 +257,52 @@ function ontimer () {
   }
 }
 
+function maybeUpdateTimer () {
+  if (ticks === triggered) return
+
+  let updated = false
+
+  while (queue.length > 0) {
+    const first = queue.peek()
+
+    if (first.tail === null) {
+      updated = true
+      queue.shift()
+      garbage--
+      deleteTimerList(first)
+      continue
+    }
+
+    if (first.expiry !== first.tail._expiry) {
+      updated = true
+      first.updateExpiry()
+      queue.update()
+      continue
+    }
+
+    break
+  }
+
+  if (updated === false) return
+  if (immediates.tail !== null) return
+
+  if (queue.length === 0) {
+    nextExpiry = 0
+    cancelTimer()
+    return
+  }
+
+  const exp = queue.peek().expiry
+  if (exp !== nextExpiry) {
+    nextExpiry = exp
+  }
+}
+
+function deleteTimerList (list) {
+  list.expiry = 0
+  timers.delete(list.ms)
+}
+
 function queueTimer (ms, repeat, fn, args) {
   if (typeof fn !== 'function') throw typeError('Callback must be a function', 'ERR_INVALID_CALLBACK')
   if (ms === 0) ms = 1
@@ -276,7 +336,7 @@ function queueTimer (ms, repeat, fn, args) {
 function clearTimer (timer) {
   const list = timer._list
   timer._clear()
-  if (list.tail !== null || list === immediates) return
+  if (list.tail !== null || list.expiry === 0) return // anything with expiry 0, is not referenced...
   garbage++
 }
 
@@ -321,7 +381,7 @@ function cmp (a, b) {
 
 function alive (list) {
   if (list.tail === null) {
-    timers.delete(list.ms)
+    deleteTimerList(list)
     return false
   }
   return true

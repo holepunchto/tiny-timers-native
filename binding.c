@@ -75,6 +75,7 @@ NAPI_METHOD(tiny_timer_resume) {
   if (ref > 0) uv_ref((uv_handle_t *) self);
   napi_create_reference(env, argv[3], 1, &(self->on_timeout));
   self->next_delay = 0;
+
   uv_timer_start((uv_timer_t *) self, on_timer, ms, 0);
 
   return NULL;
@@ -108,6 +109,15 @@ NAPI_METHOD(tiny_timer_start) {
   return NULL;
 }
 
+NAPI_METHOD(tiny_timer_stop) {
+  NAPI_ARGV(1)
+  NAPI_ARGV_BUFFER_CAST(tiny_timers_t *, self, 0)
+
+  uv_timer_stop((uv_timer_t *) self);
+
+  return NULL;
+}
+
 NAPI_INIT() {
   NAPI_EXPORT_SIZEOF(tiny_timers_t)
   NAPI_EXPORT_OFFSETOF(tiny_timers_t, next_delay)
@@ -115,6 +125,7 @@ NAPI_INIT() {
   NAPI_EXPORT_FUNCTION(tiny_timer_ref)
   NAPI_EXPORT_FUNCTION(tiny_timer_unref)
   NAPI_EXPORT_FUNCTION(tiny_timer_start)
+  NAPI_EXPORT_FUNCTION(tiny_timer_stop)
   NAPI_EXPORT_FUNCTION(tiny_timer_pause)
   NAPI_EXPORT_FUNCTION(tiny_timer_resume)
 }
