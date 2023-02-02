@@ -8,6 +8,6 @@ add_pear_module(tiny_timers_native)
 
 target_sources(
   tiny_timers_native
-  PUBLIC
+  PRIVATE
     binding.c
 )
