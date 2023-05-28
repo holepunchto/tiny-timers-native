@@ -14,4 +14,4 @@ const { setTimeout, clearTimeout } = require('tiny-timers-native')
 
 ## License
 
-MIT
+Apache-2.0
