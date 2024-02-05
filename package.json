@@ -25,5 +25,8 @@
   "bugs": {
     "url": "https://github.com/mafintosh/tiny-timers-native/issues"
   },
-  "homepage": "https://github.com/mafintosh/tiny-timers-native"
+  "homepage": "https://github.com/mafintosh/tiny-timers-native",
+  "addon": {
+    "target": "tiny_timers_native"
+  }
 }
